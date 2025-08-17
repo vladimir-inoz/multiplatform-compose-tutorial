@@ -17,7 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
-val placeholderText = """
+private val placeholderText = """
     Это пример длинного текста-заглушки, который можно использовать для тестирования интерфейса. 
     Иногда требуется заполнить экран большим количеством текста, чтобы проверить прокрутку, отступы, 
     выравнивание или визуальное восприятие макета на разных устройствах.

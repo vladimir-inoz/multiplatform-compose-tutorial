@@ -23,17 +23,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,7 +42,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import cupcake.composeapp.generated.resources.Res
-import cupcake.composeapp.generated.resources.back_button
 import cupcake.composeapp.generated.resources.cancel
 import cupcake.composeapp.generated.resources.cupcakes
 import cupcake.composeapp.generated.resources.flavor
@@ -58,12 +51,16 @@ import cupcake.composeapp.generated.resources.pickup_date
 import cupcake.composeapp.generated.resources.quantity
 import cupcake.composeapp.generated.resources.send
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.nav_cupcake.AppBarHandler
+import org.jetbrains.nav_cupcake.AppBarNavIconType
+import org.jetbrains.nav_cupcake.AppBarViewModel
 import org.jetbrains.nav_cupcake.data.OrderUiState
 import org.jetbrains.nav_cupcake.ui.components.FormattedPriceLabel
 
-enum class SummaryNestedScreen(val route: String) {
-    Main("main"),
-    About("about")
+enum class SummaryNestedScreen(val title: String) {
+    MAIN("Summary"),
+    ABOUT("About"),
+    LEGAL_INFO("Legal Info")
 }
 
 @Composable
@@ -136,7 +133,11 @@ private fun OrderSummaryScreenContent(
                 }
                 ClickableText(
                     text = "Learn more about this order",
-                    onClick = { navController.navigate(SummaryNestedScreen.About.route) }
+                    onClick = { navController.navigate(SummaryNestedScreen.ABOUT.name) }
+                )
+                ClickableText(
+                    text = "Legal Info",
+                    onClick = { navController.navigate(SummaryNestedScreen.LEGAL_INFO.name) }
                 )
             }
         }
@@ -144,41 +145,37 @@ private fun OrderSummaryScreenContent(
 }
 
 @Composable
-private fun SummaryTopBar(
-    navigateUp: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    TopAppBar(
-        title = { Text("About order") },
-        colors = TopAppBarDefaults.mediumTopAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        ),
-        modifier = modifier,
-        navigationIcon = {
-            IconButton(onClick = navigateUp) {
-                Icon(
-                    imageVector = Icons.Filled.ArrowBack,
-                    contentDescription = stringResource(Res.string.back_button)
-                )
-            }
-        }
-    )
-}
-
-@Composable
 fun OrderSummaryScreen(
     orderUiState: OrderUiState,
     onCancelButtonClicked: () -> Unit,
     onSendButtonClicked: (String, String) -> Unit,
+    appBarViewModel: AppBarViewModel,
     modifier: Modifier = Modifier
 ) {
     val nestedNavController = rememberNavController()
 
+    AppBarHandler(
+        navController = nestedNavController,
+        appBarViewModel = appBarViewModel,
+        getTitle = { route ->
+            SummaryNestedScreen.valueOf(
+                route ?: SummaryNestedScreen.MAIN.name
+            ).title
+        },
+        iconType = { route ->
+            when (route) {
+                SummaryNestedScreen.LEGAL_INFO.name -> AppBarNavIconType.CLOSE
+                SummaryNestedScreen.ABOUT.name -> AppBarNavIconType.CLOSE
+                else -> AppBarNavIconType.BACK
+            }
+        }
+    )
+
     NavHost(
         navController = nestedNavController,
-        startDestination = SummaryNestedScreen.Main.route,
+        startDestination = SummaryNestedScreen.MAIN.name,
     ) {
-        composable(route = SummaryNestedScreen.Main.route) {
+        composable(route = SummaryNestedScreen.MAIN.name) {
             OrderSummaryScreenContent(
                 orderUiState = orderUiState,
                 onCancelButtonClicked = onCancelButtonClicked,
@@ -188,8 +185,12 @@ fun OrderSummaryScreen(
             )
         }
 
-        composable(route = SummaryNestedScreen.About.route) {
+        composable(route = SummaryNestedScreen.ABOUT.name) {
             AboutOrderScreen()
+        }
+
+        composable(route = SummaryNestedScreen.LEGAL_INFO.name) {
+            LegalInfoScreen()
         }
     }
 }
@@ -207,16 +208,3 @@ fun ClickableText(text: String, onClick: () -> Unit) {
         modifier = Modifier.fillMaxWidth().clickable { onClick() }
     )
 }
-//
-//@Preview
-//@Composable
-//fun OrderSummaryPreview() {
-//    CupcakeTheme {
-//        OrderSummaryScreen(
-//            orderUiState = OrderUiState(0, "Test", "Test", "$300.00"),
-//            onSendButtonClicked = { subject: String, summary: String -> },
-//            onCancelButtonClicked = {},
-//            modifier = Modifier.fillMaxHeight()
-//        )
-//    }
-//}

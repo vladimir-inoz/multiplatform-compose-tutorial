@@ -20,15 +20,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -43,7 +35,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import cupcake.composeapp.generated.resources.Res
 import cupcake.composeapp.generated.resources.app_name
-import cupcake.composeapp.generated.resources.back_button
 import cupcake.composeapp.generated.resources.choose_flavor
 import cupcake.composeapp.generated.resources.choose_pickup_date
 import cupcake.composeapp.generated.resources.order_summary
@@ -69,38 +60,10 @@ enum class CupcakeScreen(val title: StringResource) {
     Promo(title = Res.string.promo_name)
 }
 
-/**
- * Composable that displays the topBar and displays back button if back navigation is possible.
- */
-@Composable
-fun CupcakeAppBar(
-    currentScreen: CupcakeScreen,
-    canNavigateBack: Boolean,
-    navigateUp: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    TopAppBar(
-        title = { Text(stringResource(currentScreen.title)) },
-        colors = TopAppBarDefaults.mediumTopAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        ),
-        modifier = modifier,
-        navigationIcon = {
-            if (canNavigateBack) {
-                IconButton(onClick = navigateUp) {
-                    Icon(
-                        imageVector = Icons.Filled.ArrowBack,
-                        contentDescription = stringResource(Res.string.back_button)
-                    )
-                }
-            }
-        }
-    )
-}
-
 @Composable
 fun CupcakeApp(
     viewModel: OrderViewModel = viewModel { OrderViewModel() },
+    appBarViewModel: AppBarViewModel = viewModel { AppBarViewModel() },
     navController: NavHostController = rememberNavController()
 ) {
     // Get current back stack entry
@@ -119,17 +82,23 @@ fun CupcakeApp(
         }
     }
 
+    AppBarHandler(
+        navController = navController,
+        appBarViewModel = appBarViewModel,
+        getTitle = { route ->
+            CupcakeScreen.valueOf(
+                route ?: CupcakeScreen.Start.name
+            ).name
+        }
+    )
+
     Scaffold(
         topBar = {
             CupcakeAppBar(
-                currentScreen = currentScreen,
-                canNavigateBack = navController.previousBackStackEntry != null,
-                navigateUp = { navController.navigateUp() }
+                viewModel = appBarViewModel
             )
         }
     ) { innerPadding ->
-
-
         NavHost(
             navController = navController,
             startDestination = CupcakeScreen.Start.name,
@@ -191,6 +160,7 @@ fun CupcakeApp(
                             navController = navController
                         )
                     },
+                    appBarViewModel = appBarViewModel,
                     modifier = Modifier.fillMaxHeight()
                 )
             }
